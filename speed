@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalkulator Speed Treadmill</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Latar belakang biru polos */
+    body {
+      background-color: #0d47a1;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* Kotak Utama */
+    .container {
+      background-color: #1565c0;
+      width: 100%;
+      max-width: 600px;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.8rem;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    .time-input-container {
+      display: flex;
+      gap: 10px;
+    }
+
+    .time-input-container input {
+      flex: 2;
+    }
+
+    .time-input-container select {
+      flex: 1;
+    }
+
+    label {
+      display: block;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #90caf9;
+      background-color: #ffffff;
+      color: #333333;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    /* Teks Pembaca Nilai Input Live */
+    .input-hint {
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: #bbdefb;
+      font-weight: bold;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #2196f3;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #1e88e5;
+    }
+
+    /* Layout 2 Kolom Hasil */
+    .results-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 25px;
+      display: none;
+    }
+
+    .results-container.active {
+      display: grid;
+    }
+
+    .result-card {
+      background-color: #0d47a1;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #64b5f6;
+    }
+
+    .result-card h3 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #64b5f6;
+      padding-bottom: 6px;
+      color: #bbdefb;
+    }
+
+    .result-item {
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+    }
+
+    .result-item label {
+      color: #e3f2fd;
+      font-size: 0.8rem;
+      margin-bottom: 2px;
+    }
+
+    .result-value {
+      font-weight: bold;
+      font-size: 1.05rem;
+      color: #ffffff;
+    }
+
+    .result-value-highlight {
+      font-weight: bold;
+      font-size: 1.15rem;
+      color: #ffee58; /* Warna kuning emas untuk highlight total akhir */
+    }
+
+    .small-note {
+      font-size: 0.85rem;
+      color: #90caf9;
+      font-weight: normal;
+      margin-top: 2px;
+    }
+
+    @media (max-width: 500px) {
+      .results-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Kalkulator Speed Treadmill</h1>
+
+    <form id="calcForm">
+      <div class="input-group">
+        <label for="initialSpeed">Speed Awal Saat Ini:</label>
+        <input type="number" id="initialSpeed" placeholder="Contoh: 30000" step="any" value="0">
+        <div class="input-hint" id="initialSpeedHint">Nominal: 0</div>
+      </div>
+
+      <div class="input-group">
+        <label for="speed">Speed Multiplier (Dapat per Detik):</label>
+        <input type="number" id="speed" placeholder="Contoh: 30000" step="any" required>
+        <div class="input-hint" id="speedHint">Nominal: -</div>
+      </div>
+
+      <div class="input-group">
+        <label for="afkTime">Berapa Waktu AFK:</label>
+        <div class="time-input-container">
+          <input type="number" id="afkTime" placeholder="Contoh: 1" step="any" required>
+          <select id="timeUnit">
+            <option value="jam">Jam</option>
+            <option value="hari">Hari</option>
+            <option value="detik">Detik</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit">Hitung</button>
+    </form>
+
+    <!-- Hasil 2 Kolom -->
+    <div class="results-container" id="resultsContainer">
+      
+      <!-- Kolom 1 -->
+      <div class="result-card">
+        <h3>Rincian Waktu</h3>
+        <div class="result-item">
+          <label>Total Jam (1 Jam = 3.600 Detik):</label>
+          <div class="result-value" id="col1TotalJam">0 Jam</div>
+        </div>
+        <div class="result-item">
+          <label>Konversi ke Detik:</label>
+          <div class="result-value" id="col1TotalDetik">0 Detik</div>
+        </div>
+        <div class="result-item">
+          <label>Estimasi Hari:</label>
+          <div class="result-value" id="col1TotalHari">0 Hari</div>
+        </div>
+      </div>
+
+      <!-- Kolom 2 -->
+      <div class="result-card">
+        <h3>Hasil Speed</h3>
+        <div class="result-item">
+          <label>Speed Awal:</label>
+          <div class="result-value" id="col2SpeedAwal">0</div>
+        </div>
+        <div class="result-item">
+          <label>Speed Diperoleh Dari AFK:</label>
+          <div class="result-value" id="col2FinalShort">0</div>
+          <div class="small-note" id="col2FinalFull">(0)</div>
+        </div>
+        <div class="result-item" style="border-top: 1px dashed #64b5f6; padding-top: 8px;">
+          <label>Total Speed Akhir (Awal + AFK):</label>
+          <div class="result-value-highlight" id="col2TotalAkhirShort">0</div>
+          <div class="small-note" id="col2TotalAkhirFull">(0)</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Format standar dengan titik ribuan
+    function formatNumber(num) {
+      if (isNaN(num)) return "0";
+      const rounded = Math.round(num * 100) / 100;
+      return rounded.toLocaleString('id-ID');
+    }
+
+    // Format dengan singkatan K, M, B, T, Qa (Gaming format)
+    function formatCompactNumber(num) {
+      if (isNaN(num) || num === 0) return "0";
+
+      const units = [
+        { value: 1e15, symbol: "Qa" },
+        { value: 1e12, symbol: "T" },
+        { value: 1e9, symbol: "B" },
+        { value: 1e6, symbol: "M" },
+        { value: 1e3, symbol: "K" }
+      ];
+
+      for (let i = 0; i < units.length; i++) {
+        if (num >= units[i].value) {
+          const formatted = (num / units[i].value).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+          return `${formatted} ${units[i].symbol}`;
+        }
+      }
+
+      return num.toLocaleString('id-ID');
+    }
+
+    // Live Hint untuk Speed Awal
+    document.getElementById('initialSpeed').addEventListener('input', function() {
+      const val = parseFloat(this.value);
+      const hint = document.getElementById('initialSpeedHint');
+      if (!isNaN(val) && val >= 0) {
+        hint.innerText = `Nominal: ${formatCompactNumber(val)} (${formatNumber(val)})`;
+      } else {
+        hint.innerText = "Nominal: 0";
+      }
+    });
+
+    // Live Hint untuk Speed Multiplier
+    document.getElementById('speed').addEventListener('input', function() {
+      const val = parseFloat(this.value);
+      const hint = document.getElementById('speedHint');
+      if (!isNaN(val) && val > 0) {
+        hint.innerText = `Nominal: ${formatCompactNumber(val)} (${formatNumber(val)})`;
+      } else {
+        hint.innerText = "Nominal: -";
+      }
+    });
+
+    document.getElementById('calcForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const initialSpeed = parseFloat(document.getElementById('initialSpeed').value) || 0;
+      const speed = parseFloat(document.getElementById('speed').value);
+      const afkTime = parseFloat(document.getElementById('afkTime').value);
+      const timeUnit = document.getElementById('timeUnit').value;
+
+      if (speed <= 0 || afkTime <= 0) {
+        alert("Harap masukkan angka lebih besar dari 0!");
+        return;
+      }
+
+      // Konversi waktu ke detik & jam
+      let totalDetik = 0;
+      let totalJam = 0;
+
+      if (timeUnit === 'detik') {
+        totalDetik = afkTime;
+        totalJam = afkTime / 3600;
+      } else if (timeUnit === 'hari') {
+        totalJam = afkTime * 24;
+        totalDetik = totalJam * 3600;
+      } else { // jam
+        totalJam = afkTime;
+        totalDetik = totalJam * 3600;
+      }
+
+      const totalHari = totalJam / 24;
+
+      // Rumus: (Total Detik ÷ 0.1) × Speed Multiplier
+      const speedGained = (totalDetik / 0.1) * speed;
+      const totalSpeedAkhir = initialSpeed + speedGained;
+
+      // Tampilkan Hasil Kolom 1
+      document.getElementById('col1TotalJam').innerText = formatNumber(totalJam) + " Jam";
+      document.getElementById('col1TotalDetik').innerText = formatNumber(totalDetik) + " Detik";
+      document.getElementById('col1TotalHari').innerText = formatNumber(totalHari) + " Hari";
+
+      // Tampilkan Hasil Kolom 2
+      document.getElementById('col2SpeedAwal').innerText = formatCompactNumber(initialSpeed) + ` (${formatNumber(initialSpeed)})`;
+      document.getElementById('col2FinalShort').innerText = formatCompactNumber(speedGained);
+      document.getElementById('col2FinalFull').innerText = `(${formatNumber(speedGained)})`;
+
+      // Total Speed Akhir (Highlight)
+      document.getElementById('col2TotalAkhirShort').innerText = formatCompactNumber(totalSpeedAkhir);
+      document.getElementById('col2TotalAkhirFull').innerText = `(${formatNumber(totalSpeedAkhir)})`;
+
+      // Munculkan Hasil
+      document.getElementById('resultsContainer').classList.add('active');
+    });
+  </script>
+
+</body>
+</html>
